@@ -1,0 +1,14 @@
+- name: use ansible to install and start nginx
+  hosts: webserver
+  become: yes
+  tasks:
+    - name: update apt
+      shell: apt update
+    - name: install nginx
+      apt: name=nginx state=present
+    - name: start nginx
+      service: name=nginx state=started
+    - name: create index page
+      copy: src=../index.html dest=/var/www/html
+    - name: Restart nginx
+      service: name=nginx state=restarted
