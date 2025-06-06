@@ -1,0 +1,74 @@
+# .github/workflows/ansible-configure.yaml
+
+name: Ansible Configuration
+
+on:
+  workflow_run:
+    workflows: ["Terraform CI/CD Pipeline"] # Name of the Terraform workflow (from its 'name:' field)
+    types:
+      - completed
+    branches:
+      - main # Allows manual trigger
+
+jobs:
+  run_ansible_playbook:
+    name: 'Run Ansible Playbook'
+    runs-on: ubuntu-latest
+    # You might want to add 'needs: terraform_apply' if Ansible should run only after Terraform.
+    #needs: terraform_apply
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Instance Public IP Artifact
+        # Downloads the artifact uploaded by the Terraform workflow.
+        uses: actions/download-artifact@v4
+        with:
+          name: instance-public-ip # Must match the 'name' given in upload-artifact step
+
+      - name: Read Public IP
+        # Reads the IP from the downloaded file and sets it as an environment variable.
+        run: |
+          PUBLIC_IP=$(cat public_ip.txt) # public_ip.txt will be in the root of the runner's workspace
+          echo "Retrieved Public IP: $PUBLIC_IP"
+          echo "INSTANCE_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV # Make IP available as an environment variable  
+
+      - name: Setup Python
+        # Ansible requires Python.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Ansible
+        # Installs Ansible via pip.
+        run: pip install ansible
+
+      - name: Configure AWS Credentials
+        # Required if your Ansible playbooks interact with AWS (e.g., dynamic inventory, EC2 modules).
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1 # IMPORTANT: Change this to your desired AWS region
+
+
+      - name: Set up SSH Private Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa_github_actions
+          chmod 600 ~/.ssh/id_rsa_github_actions
+        shell: bash
+        
+      - name: Run Ansible Playbook
+        # Executes your main Ansible playbook.
+        # IMPORTANT: Adjust the path to your playbook and inventory.
+        run: |
+          ansible-playbook -i ansible/hosts.ini ansible/site.yml
+        working-directory: ./ansible # IMPORTANT: Adjust this path if your Ansible files are elsewhere
+        env:
+          # Pass AWS credentials as environment variables if Ansible modules need them directly.
+          # The configure-aws-credentials action generally handles this for most AWS CLI/SDK calls.
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1

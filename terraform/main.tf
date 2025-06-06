@@ -10,16 +10,22 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region     = var.region
-  access_key = "aws-access-key"
-  secret_key = "aws-secret-key"
+  # access_key = "aws-access-key"
+  # secret_key = "aws-secret-key"
 }
 
+data "aws_key_pair" "existing_ec2_key_pair" {
+  # IMPORTANT: Replace "my-existing-key-name" with the actual name
+  # of your SSH key pair as it appears in the AWS EC2 Key Pairs console.
+  key_name = "demo"
+}
 
 # Create an instance
 resource "aws_instance" "web" {
   ami                    = var.ami-id
   instance_type          = var.instance_type
-  key_name               = var.key
+  key_name               = data.aws_key_pair.existing_ec2_key_pair.key_name
+
   vpc_security_group_ids = [aws_security_group.example.id]
 
   tags = {

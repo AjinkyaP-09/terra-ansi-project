@@ -1,0 +1,108 @@
+# .github/workflows/terraform-ci-cd.yaml
+
+name: Terraform CI/CD
+
+# This workflow will be triggered on pushes to the 'main' branch
+# and on pull requests targeting the 'main' branch.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
+
+jobs:
+  terraform_plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    # This job runs only on pull requests to show a plan preview
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout Repository
+        # Checks out your repository code so the workflow can access it.
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        # This action sets up AWS credentials for subsequent steps.
+        # It's the recommended way to handle AWS auth in GitHub Actions.
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # These values come from your GitHub Repository Secrets.
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1 # IMPORTANT: Change this to your desired AWS region
+
+      - name: Setup Terraform
+        # Installs a specific version of Terraform.
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.0.0 # Adjust this to your desired Terraform version
+
+      - name: Terraform Init
+        # Initializes a Terraform working directory.
+        run: terraform init
+        working-directory: ./terraform # IMPORTANT: Adjust this path if your .tf files are elsewhere
+
+      - name: Terraform Format Check
+        # Checks that Terraform code is formatted correctly.
+        run: terraform fmt -check
+        working-directory: ./terraform # IMPORTANT: Adjust this path
+
+      - name: Terraform Validate
+        # Validates the syntax and configuration of Terraform files.
+        run: terraform validate
+        working-directory: ./terraform # IMPORTANT: Adjust this path
+
+      - name: Terraform Plan
+        # Generates an execution plan and displays what actions Terraform will take.
+        run: terraform plan
+        working-directory: ./terraform # IMPORTANT: Adjust this path
+
+  terraform_apply:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    # This job runs only on pushes to the 'main' branch,
+    # and only after the 'terraform_plan' job (if applicable) is successful.
+    needs: terraform_plan # Ensures plan runs first, if it's a pull request
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1 # IMPORTANT: Change this to your desired AWS region
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.0.0 # Adjust this to your desired Terraform version
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform # IMPORTANT: Adjust this path
+
+      - name: Terraform Apply and Capture IP
+        id: apply_and_capture_ip # Assign an ID to this step
+        run: |
+          terraform apply -auto-approve -no-color | tee terraform_apply_output.txt
+          # Extract the public_ip output. Adjust the grep pattern if your output format changes.
+          PUBLIC_IP=$(grep 'instance_public_ip =' terraform_apply_output.txt | awk '{print $3}' | tr -d '"')
+          echo "Captured Public IP: $PUBLIC_IP"
+          echo "$PUBLIC_IP" > public_ip.txt # Save IP to a file
+        working-directory: ./terraform # IMPORTANT: Adjust this path
+
+      - name: Upload Public IP as Artifact
+        # Uploads the 'public_ip.txt' file as a workflow artifact.
+        uses: actions/upload-artifact@v4
+        with:
+          name: instance-public-ip
+          path: terraform/public_ip.txt # IMPORTANT: Ensure this path is correct relative to the repo root
+
