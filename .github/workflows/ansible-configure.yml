@@ -34,8 +34,8 @@ jobs:
       #     echo "Retrieved Public IP: $PUBLIC_IP"
       #     echo "INSTANCE_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV # Make IP available as an environment variable  
       
-      - name: read hosts.ini
-        run : cat hosts.ini
+      # - name: read hosts.ini
+      #   run : cat hosts.ini
       - name: Setup Python
         # Ansible requires Python.
         uses: actions/setup-python@v5
