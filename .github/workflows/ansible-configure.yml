@@ -33,13 +33,7 @@ jobs:
       #     PUBLIC_IP=$(cat public_ip.txt) # public_ip.txt will be in the root of the runner's workspace
       #     echo "Retrieved Public IP: $PUBLIC_IP"
       #     echo "INSTANCE_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV # Make IP available as an environment variable  
-      - name: Create Ansible hosts.ini dynamically
-        # This step directly uses the 'instance_public_ip' passed via workflow_dispatch inputs.
-        run: |
-          echo "[webserver]" > hosts.ini
-          echo "${{ github.event.inputs.instance_public_ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa_github_actions" >> hosts.ini
-        # No 'working-directory' needed here if hosts.ini is created in the root of the runner's workspace
-
+      
       - name: read hosts.ini
         run : cat hosts.ini
       - name: Setup Python
