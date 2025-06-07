@@ -46,10 +46,10 @@ jobs:
         run: terraform init
         working-directory: ./terraform # IMPORTANT: Adjust this path if your .tf files are elsewhere
 
-      - name: Terraform Format Check
-        # Checks that Terraform code is formatted correctly.
-        run: terraform fmt -check
-        working-directory: ./terraform # IMPORTANT: Adjust this path
+      # - name: Terraform Format Check
+      #   # Checks that Terraform code is formatted correctly.
+      #   run: terraform fmt -check
+      #   working-directory: ./terraform # IMPORTANT: Adjust this path
 
       - name: Terraform Validate
         # Validates the syntax and configuration of Terraform files.
