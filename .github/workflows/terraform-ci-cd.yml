@@ -8,9 +8,9 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
   workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
     name: 'Terraform Plan'
     runs-on: ubuntu-latest
     # This job runs only on pull requests to show a plan preview
-    if: github.event_name == 'pull_request'
+    
 
     steps:
       - name: Checkout Repository
