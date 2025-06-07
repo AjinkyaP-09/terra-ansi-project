@@ -105,4 +105,29 @@ jobs:
         with:
           name: instance-public-ip
           path: terraform/public_ip.txt # IMPORTANT: Ensure this path is correct relative to the repo root
+  
+  trigger_ansible: # <--- NEW JOB TO TRIGGER ANSIBLE WORKFLOW
+    name: 'Trigger Ansible Configuration Workflow'
+    runs-on: ubuntu-latest
+    needs: [terraform_apply] # This job needs the 'apply' job to complete
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.apply.outputs.instance_public_ip # Only trigger if apply succeeded and IP is available
+
+    steps:
+      - name: Checkout code (required for 'actions/github-script')
+        uses: actions/checkout@v4
+
+      - name: Trigger Ansible Workflow
+        uses: actions/github-script@v6 # Or v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }} # Default token has permissions to trigger workflows in the same repo
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ansible-configure.yml', # The filename of your Ansible workflow
+              ref: context.ref, # The branch to trigger the workflow on (e.g., 'main')
+              inputs: {
+                instance_public_ip: '${{ needs.apply.outputs.instance_public_ip }}'
+              }
+            });
 

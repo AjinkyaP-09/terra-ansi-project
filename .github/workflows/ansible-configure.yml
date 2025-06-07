@@ -3,12 +3,12 @@
 name: Ansible Configuration
 
 on:
-  workflow_run:
-    workflows: ["Terraform CI/CD Pipeline"] # Name of the Terraform workflow (from its 'name:' field)
-    types:
-      - completed
-    branches:
-      - main # Allows manual trigger
+  workflow_dispatch: # <--- ADD THIS LINE
+    inputs:
+      instance_public_ip:
+        description: 'Public IP of the EC2 instance to configure'
+        required: true
+        type: string
 
 jobs:
   run_ansible_playbook:
