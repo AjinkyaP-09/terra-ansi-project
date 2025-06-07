@@ -3,7 +3,7 @@
 name: Terraform CI/CD
 
 # This workflow will be triggered on pushes to the 'main' branch
-# and on pull requests targeting the 'main' branch.
+# and on pull requests targeting the 'main' bra
 on:
   push:
     branches:
