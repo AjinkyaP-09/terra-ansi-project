@@ -68,6 +68,8 @@ jobs:
     # and only after the 'terraform_plan' job (if applicable) is successful.
     needs: terraform_plan # Ensures plan runs first, if it's a pull request
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs: # <--- ADD THIS SECTION to the 'terraform_apply' job
+      instance_public_ip: ${{ steps.apply_and_capture_ip.outputs.public_ip_output }} # <--- Reference the step's output ID and name
 
     steps:
       - name: Checkout Repository
