@@ -71,7 +71,7 @@ jobs:
         # Executes your main Ansible playbook.
         # IMPORTANT: Adjust the path to your playbook and inventory.
         run: |
-          ansible-playbook -i ansible/hosts.ini site.yml
+          ansible-playbook -i hosts.ini site.yml
         working-directory: ./ansible # IMPORTANT: Adjust this path if your Ansible files are elsewhere
         env:
           # Pass AWS credentials as environment variables if Ansible modules need them directly.
